@@ -1,0 +1,544 @@
+1: DisplayingLED
+Raspberry Pi physical pin
+5
+10
+19
+26
+29
+
+#led_pattern.py#
+import RPi.GPIO as GPIO 
+import time 
+x=1 
+numTimes=int(input("Enter tottal number of times to blink")) speed=float(input("Enter length of each blink(seconds) : ")) 
+GPIO.setwarnings(False) GPIO.setmode(GPIO.BOARD) GPIO.setup(5,GPIO.OUT) GPIO.setup(10,GPIO.OUT) GPIO.setup(19,GPIO.OUT) GPIO.setup(26,GPIO.OUT) GPIO.setup(29,GPIO.OUT) 
+def Blink(numTimes,speed): for i in range(0,numTimes): 
+GPIO.output(5,True) print ("Iteration ", (i+1)) 
+GPIO.output(10,True) print ("Iteration ", (i+1)) 
+GPIO.output(19,True) print ("Iteration ", (i+1)) 
+GPIO.output(26,True) print ("Iteration ", (i+1)) 
+GPIO.output(29,True) print ("Iteration ", (i+1)) 
+GPIO.output(29,False) print ("Iteration ", (i+1)) time.sleep(speed) 
+GPIO.output(26,False) print ("Iteration ", (i+1)) time.sleep(speed) 
+GPIO.output(19,False) print ("Iteration ", (i+1)) time.sleep(speed) 
+GPIO.output(10,False) print ("Iteration ", (i+1)) time.sleep(speed) 
+GPIO.output(5,False) print ("Iteration ", (i+1)) time.sleep(speed) 
+Blink(numTimes,speed) 
+print("Done") 
+#python3 led_pattern.py#
+
+2.Time over 4-Digit 7-Segment 
+wget https://raspberrytips.nl/files/tm1637.py
+
+#Save the program as clock.py.#
+import sys
+import time
+import datetime
+import RPi.GPIO as GPIO
+import tm1637
+
+# CLK -> GPIO23 (Physical Pin 16)
+# DIO -> GPIO24 (Physical Pin 18)
+
+Display = tm1637.TM1637(23, 24, tm1637.BRIGHT_TYPICAL)
+
+Display.Clear()
+Display.SetBrightness(1)
+
+while True:
+now = datetime.datetime.now()
+
+hour = now.hour
+minute = now.minute
+second = now.second
+
+currenttime = [
+int(hour / 10),
+hour % 10,
+int(minute / 10),
+minute % 10
+    ]
+Display.Show(currenttime)
+Display.ShowDoublepoint(second % 2)
+
+time.sleep(1)
+
+#cd Desktop
+mkdir -p Practical2
+cd Practical2
+python3 clock.py#
+
+3.Oscilloscope
+ADS1115 pin	Raspberry Pi connection
+VDD	3.3V — physical pin 1
+GND	GND — physical pin 6
+SDA	GPIO2 / SDA — physical pin 3
+SCL	GPIO3 / SCL — physical pin 5
+A0	Analog signal input from the test circuit
+#sudo raspi-config
+sudo reboot
+sudo apt update
+sudo apt install python3-matplotlib python3-pip git
+git clone https://github.com/adafruit/Adafruit_Python_ADS1x15.git
+cd Adafruit_Python_ADS1x15
+sudo python setup.py install
+python3 -m pip install drawnow
+#
+#scope.py#
+
+import time
+import matplotlib.pyplot as plt
+from drawnow import *
+import Adafruit_ADS1x15
+
+# Create ADS1115 ADC object
+adc = Adafruit_ADS1x15.ADS1115()
+
+# Set ADC gain
+GAIN = 1
+
+# Store ADC readings
+val = []
+cnt = 0
+
+# Enable interactive graph
+plt.ion()
+
+# Start reading analog channel A0
+adc.start_adc(0, gain=GAIN)
+
+print("Reading ADS1115 Channel 0")
+
+# Function to draw graph
+def makeFig():
+    plt.ylim(-5000, 5000)
+    plt.title("Oscilloscope")
+    plt.grid(True)
+    plt.ylabel("ADC Outputs")
+    plt.xlabel("Samples")
+    plt.plot(val, "ro-", label="Channel 0")
+    plt.legend(loc="lower right")
+
+while True:
+value = adc.get_last_result()
+
+print("Channel 0: {}".format(value))
+time.sleep(0.5)
+
+val.append(int(value))
+drawnow(makeFig)
+plt.pause(0.000001)
+
+cnt += 1
+
+if cnt > 50:
+   val.pop(0)
+
+#python3 scope.py#
+
+4.tele
+LED connection	Raspberry Pi
+GPIO output	Physical pin 11
+LED anode (+), through 220–330 Ω resistor	Physical pin 11
+LED cathode (−)	GND, physical pin 6
+Remember: The LED must have a current-limiting resistor.
+2. Create a Telegram bot
+1. Open Telegram on your mobile or computer.
+2. Search for the official BotFather account.
+3. Send /start.
+4. Send /newbot and follow the instructions to choose a name and username.
+5. Copy the bot token and keep it private.
+3. Install the required library
+Open the Raspberry Pi terminal:
+sudo apt update
+sudo apt install python3-pip
+python3 -m pip install telepot
+
+
+If the last command fails because your OS restricts system-wide Python package installation, use a compatible virtual environment or your institution's prepared Raspberry Pi environment.
+4. Python code
+Save the file as telegrambot.py.
+import timeimport telepotimport RPi.GPIO as GPIOLED_PIN = 11GPIO.setmode(GPIO.BOARD)GPIO.setup(LED_PIN, GPIO.OUT)GPIO.output(LED_PIN, GPIO.LOW)# Replace with your Telegram bot tokenbot = telepot.Bot("YOUR_BOT_TOKEN")def handle(msg):    chat_id = msg["chat"]["id"]    command = msg.get("text", "").strip().lower()    print("Got command:", command)    if command == "on":        GPIO.output(LED_PIN, GPIO.HIGH)        bot.sendMessage(chat_id, "LED is ON")    elif command == "off":        GPIO.output(LED_PIN, GPIO.LOW)        bot.sendMessage(chat_id, "LED is OFF")    else:        bot.sendMessage(chat_id, "Send on or off")bot.message_loop(handle)print("I am listening...")try:    while True:
+
+
+
+Important: Replace YOUR_BOT_TOKEN with your actual token on the Raspberry Pi. Do not share it or upload it publicly.
+5. Execute the program
+Open the terminal and create the file:
+nano telegrambot.py
+
+
+Paste the code, then save using Ctrl + O, press Enter, and exit with Ctrl + X.
+Run:
+python3 telegrambot.py
+
+5.GPS Module
+GPS module	Raspberry Pi
+VCC	Compatible power pin according to the GPS module specifications
+GND	Physical pin 6 (GND)
+TX	Physical pin 10 (GPIO15 / UART RXD)
+RX	Physical pin 8 (GPIO14 / UART TXD), if required
+#sudo raspi-config
+sudo reboot
+sudo apt update
+sudo apt install python3-serial python3-pynmea2
+#gps.py#
+
+import time
+import serial
+import pynmea2
+
+# Serial port connected to the GPS module
+port = "/dev/ttyAMA0"
+
+# Create serial object
+ser = serial.Serial(
+    port,
+    baudrate=9600,
+    timeout=0.5
+)
+
+print("Reading GPS data...")
+
+try:
+    while True:
+        data = ser.readline().decode(
+            "ascii", errors="ignore"
+        ).strip()
+
+        if data.startswith("$GPGGA"):
+            try:
+                msg = pynmea2.parse(data)
+
+                print(msg)
+                print("Latitude:", msg.latitude)
+                print("Longitude:", msg.longitude)
+
+            except pynmea2.ParseError:
+                print("Invalid GPS data")
+
+        time.sleep(2)
+
+except KeyboardInterrupt:
+    print("GPS program stopped")
+
+finally:
+    ser.close()
+#python3 gps.py#
+
+6.16×2 LCD
+#sudo raspi-config
+sudo reboot
+sudo apt update
+sudo apt install python3-smbus i2c-tools
+i2cdetect -y 1#
+#lcd_i2c.py#
+
+import smbus
+import time
+
+# Device parameters
+I2C_ADDR = 0x27
+LCD_WIDTH = 16
+
+# LCD commands and modes
+LCD_CHR = 1
+LCD_CMD = 0
+
+LCD_LINE_1 = 0x80
+LCD_LINE_2 = 0xC0
+LCD_LINE_3 = 0x94
+LCD_LINE_4 = 0xD4
+
+LCD_BACKLIGHT = 0x08
+ENABLE = 0b00000100
+
+# Timing constants
+E_PULSE = 0.0005
+E_DELAY = 0.0005
+
+# Open I2C bus
+bus = smbus.SMBus(1)
+
+
+def lcd_init():
+    lcd_byte(0x33, LCD_CMD)
+    lcd_byte(0x32, LCD_CMD)
+    lcd_byte(0x06, LCD_CMD)
+    lcd_byte(0x0C, LCD_CMD)
+    lcd_byte(0x28, LCD_CMD)
+    lcd_byte(0x01, LCD_CMD)
+    time.sleep(E_DELAY)
+
+
+def lcd_byte(bits, mode):
+    bits_high = mode | (bits & 0xF0) | LCD_BACKLIGHT
+    bits_low = mode | ((bits << 4) & 0xF0) | LCD_BACKLIGHT
+
+    bus.write_byte(I2C_ADDR, bits_high)
+    lcd_toggle_enable(bits_high)
+
+    bus.write_byte(I2C_ADDR, bits_low)
+    lcd_toggle_enable(bits_low)
+
+
+def lcd_toggle_enable(bits):
+    time.sleep(E_DELAY)
+    bus.write_byte(I2C_ADDR, bits | ENABLE)
+    time.sleep(E_PULSE)
+    bus.write_byte(I2C_ADDR, bits & ~ENABLE)
+    time.sleep(E_DELAY)
+
+
+def lcd_string(message, line):
+    message = message.ljust(LCD_WIDTH, " ")
+    lcd_byte(line, LCD_CMD)
+
+    for i in range(LCD_WIDTH):
+        lcd_byte(ord(message[i]), LCD_CHR)
+
+
+def main():
+    lcd_init()
+
+    while True:
+        lcd_string("RPiSpy <", LCD_LINE_1)
+        lcd_string("I2C LCD <", LCD_LINE_2)
+        time.sleep(3)
+
+        lcd_string("> RPiSpy", LCD_LINE_1)
+        lcd_string("> I2C LCD", LCD_LINE_2)
+        time.sleep(3)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        lcd_byte(0x01, LCD_CMD)
+        print("Program stopped")
+    finally:
+        bus.close()
+
+#python3 lcd_i2c.py#
+
+7.Home Automation
+Relay module	Raspberry Pi
+IN	Physical pin 37 (GPIO26)
+VCC	Compatible power supply, as specified by the relay module
+GND	Physical pin 39 (GND)
+#home_automation.py#
+
+import RPi.GPIO as GPIO
+from time import sleep
+
+relay_pin = 37
+
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(relay_pin, GPIO.OUT)
+
+GPIO.output(relay_pin, 1)
+
+try:
+    while True:
+        GPIO.output(relay_pin, 0)
+        sleep(5)
+
+        GPIO.output(relay_pin, 1)
+        sleep(5)
+
+except KeyboardInterrupt:
+    pass
+
+finally:
+    GPIO.cleanup()
+
+#python3 home_automation.py#
+
+
+#sudo apt update
+sudo apt install python3-flask#
+#web_home_automation.py#
+
+from flask import Flask
+import RPi.GPIO as GPIO
+
+app = Flask(__name__)
+
+RELAY_PIN = 37
+
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(RELAY_PIN, GPIO.OUT)
+
+# Common active-low relay module
+GPIO.output(RELAY_PIN, GPIO.HIGH)
+
+HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home Automation</title>
+</head>
+<body>
+    <h2>Raspberry Pi Home Automation</h2>
+    <p><a href="/on"><button>Turn ON</button></a></p>
+    <p><a href="/off"><button>Turn OFF</button></a></p>
+</body>
+</html>
+"""
+
+@app.route("/")
+def home():
+    return HTML
+
+@app.route("/on")
+def turn_on():
+    GPIO.output(RELAY_PIN, GPIO.LOW)
+    return HTML + "<p>Relay ON</p>"
+
+@app.route("/off")
+def turn_off():
+    GPIO.output(RELAY_PIN, GPIO.HIGH)
+    return HTML + "<p>Relay OFF</p>"
+
+try:
+    app.run(host="0.0.0.0", port=5000)
+
+finally:
+    GPIO.cleanup()
+#python3 web_home_automation.py#
+#ind your Raspberry Pi's IP address:
+hostname -I
+On a device connected to the same trusted network, open a browser and visit:
+http://RASPBERRY_PI_IP:5000#
+
+8.Camera
+#camera.py#
+
+import picamera
+from time import sleep
+
+# Create PiCamera object
+camera = picamera.PiCamera()
+
+# Set image resolution
+camera.resolution = (1024, 768)
+
+# Set brightness
+camera.brightness = 60
+
+# Start camera preview
+camera.start_preview()
+
+# Add text to the image
+camera.annotate_text = 'Hi Pi User'
+
+# Wait for 5 seconds
+sleep(5)
+
+# Capture and save image
+camera.capture('image1.jpeg')
+
+# Stop preview
+camera.stop_preview()
+
+camera.close()
+
+#python3 camera.py#
+#record a video#
+#video.py#
+
+import picamera
+from time import sleep
+
+camera = picamera.PiCamera()
+
+# Set video resolution
+camera.resolution = (640, 480)
+
+print("Recording video...")
+
+# Start video recording
+camera.start_recording("/home/pi/demo.h264")
+
+# Record for 20 seconds
+camera.wait_recording(20)
+
+# Stop recording
+camera.stop_recording()
+
+camera.close()
+
+print("Video recording stopped")
+
+#omxplayer /home/pi/demo.h264#
+
+9.RFID
+PN532 module	Raspberry Pi physical pin
+5V	Pin 4 (5V)
+GND	Pin 6 (Ground)
+SDA	Pin 3 (SDA)
+SCL	Pin 5 (SCL)
+#
+sudo raspi-config
+sudo apt-get update
+sudo apt-get install libusb-dev libpcsclite-dev i2c-tools
+
+cd ~
+wget http://dl.bintray.com/nfc-tools/sources/libnfc-1.7.1.tar.bz2
+tar -xf libnfc-1.7.1.tar.bz2
+cd libnfc-1.7.1
+./configure --prefix=/usr --sysconfdir=/etc
+make
+sudo make install
+
+sudo mkdir -p /etc/nfc
+sudo nano /etc/nfc/libnfc.conf
+
+i2cdetect --yes 1
+
+nfc-list
+
+nfc-poll
+
+#rfid_reader.py#
+import subprocess
+import time
+
+def nfc_raw():
+    lines = subprocess.check_output(
+        "/usr/bin/nfc-poll",
+        stderr=open('/dev/null', 'w')
+    )
+    return lines
+
+def read_nfc():
+    lines = nfc_raw()
+    return lines
+
+try:
+    while True:
+        myLines = read_nfc()
+        buffer = []
+
+        for line in myLines.splitlines():
+            line_content = line.split()
+
+            if not line_content[0] == b'UID':
+                pass
+            else:
+                buffer.append(line_content)
+
+        uid_data = buffer[0]
+        id_str = (
+            uid_data[2].decode() +
+            uid_data[3].decode() +
+            uid_data[4].decode() +
+            uid_data[5].decode()
+        )
+        print(id_str)
+
+except KeyboardInterrupt:
+    pass
+
+#python3 rfid_reader.py#
